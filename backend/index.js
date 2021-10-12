@@ -17,6 +17,10 @@ app.use(express.json())
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/notes', require('./routes/notes'))
 
+if ( process.env.NODE_ENV == "production"){
+  app.use(express.static("client/build"));
+}
+
 app.listen(port, () => {
   console.log(`Keeper backend listening at http://localhost:${port}`)
 })
