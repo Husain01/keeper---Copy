@@ -7,6 +7,7 @@ var jwt = require("jsonwebtoken");
 var fetchuser = require("../middleware/fetchuser");
 
 
+
 const JWT_SECRET = "hash256";
 
 //ROUTE 1: Create a User using: POST '/api/auth/createuser'. No login required
@@ -20,10 +21,11 @@ router.post(
     }),
   ],
   async (req, res) => {
+    let success = false;
     // If there are errors, return BAd request and the errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({success, errors: errors.array() });
     }
     try {
       // Chcek whether the user with this email exist already
@@ -31,7 +33,7 @@ router.post(
       if (user) {
         return res
           .status(400)
-          .json({ error: "Sorry a user with this email already exist" });
+          .json({success, error: "Sorry a user with this email already exist" });
       }
       const salt = await bcrypt.genSalt(10);
       const secPass = await bcrypt.hash(req.body.password, salt);
@@ -47,9 +49,10 @@ router.post(
           id: user.id,
         },
       };
-      const authToken = jwt.sign(data, JWT_SECRET);
+      const authtoken = jwt.sign(data, JWT_SECRET);
       //   res.json(user);
-      res.json({ authToken });
+      success= true;
+      res.json({success, authtoken });
       //Catching errors
     } catch (error) {
       console.error(error.message);
@@ -69,6 +72,7 @@ router.post(
     body("password", "Password cannot be blank").exists(),
   ],
   async (req, res) => {
+    let success = false;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -77,23 +81,26 @@ router.post(
     try {
       let user = await User.findOne({ email });
       if (!user) {
+        success= false;
         return res
           .status(400)
-          .json({ error: "Please try to login with correct credentials" });
+          .json({success, error: "Please try to login with correct credentials" });
       }
       const passwordCompare = await bcrypt.compare(password, user.password);
       if (!passwordCompare) {
+        success= false;
         return res
           .status(400)
-          .json({ error: "Please try to login with correct credentials" });
+          .json({ success, error: "Please try to login with correct credentials" });
       }
       const data = {
         user: {
           id: user.id,
         },
       };
-      const authToken = jwt.sign(data, JWT_SECRET);
-      res.json({ authToken });
+      const authtoken = jwt.sign(data, JWT_SECRET);
+      success = true;
+      res.json({ success, authtoken });
     } catch (error) {
       console.error(error.message);
       res.status(500).send("Interval Server Error occured");
